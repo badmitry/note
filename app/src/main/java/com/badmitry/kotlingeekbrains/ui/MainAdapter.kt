@@ -31,9 +31,11 @@ class MainAdapter : RecyclerView.Adapter<MainAdapter.NoteViewHolder>() {
 
     class NoteViewHolder(itemView: View) : ViewHolder(itemView) {
         fun bind(note: Note) = with(itemView) {
-            note_title.text = note.title
-            note_text.text = note.note
-            setBackgroundColor(note.color)
+            with(note) {
+                note_title.text = title
+                note_text.text = notes
+                setBackgroundColor(color)
+            }
         }
     }
 
