@@ -14,14 +14,15 @@
             android:id="@+id/note_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textStyle="bold"
             android:layout_marginStart="@dimen/main_margin"
-            android:layout_marginTop="@dimen/main_margin"
-            android:layout_marginEnd="@dimen/main_margin" />
+            android:layout_marginTop="@dimen/main_margin"/>
 
         <TextView
             android:id="@+id/note_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:maxLines="2"
             android:layout_margin="@dimen/main_margin" />
 
     </LinearLayout>

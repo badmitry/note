@@ -1,47 +1,60 @@
 package com.badmitry.kotlingeekbrains.data
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import com.badmitry.kotlingeekbrains.data.model.Color
 import com.badmitry.kotlingeekbrains.data.model.Note
+import java.util.*
 
 object Repository {
-    val notes: List<Note> = listOf(
-            Note("Моя первая заметка",
+
+    private val notesLiveData = MutableLiveData<List<Note>>()
+
+    private val notes: MutableList<Note> = mutableListOf(
+            Note(UUID.randomUUID().toString(), "Моя первая заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xfff06292.toInt()),
-            Note("Моя вторая заметка",
+                    Color.WHITE),
+            Note(UUID.randomUUID().toString(), "Моя вторая заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xff9575cd.toInt()),
-            Note("Моя третья заметка",
+                    Color.BLUE),
+            Note(UUID.randomUUID().toString(), "Моя третья заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xff64b5f6.toInt()),
-            Note("Моя четвертая заметка",
+                    Color.GREEN),
+            Note(UUID.randomUUID().toString(), "Моя четвертая заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xff4db6ac.toInt()),
-            Note("Моя пятая заметка",
+                    Color.PINK),
+            Note(UUID.randomUUID().toString(), "Моя пятая заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffb2ff59.toInt()),
-            Note("Моя шестая заметка",
+                    Color.RED),
+            Note(UUID.randomUUID().toString(), "Моя шестая заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
-            Note("Моя седьмая заметка",
+                    Color.VIOLET),
+            Note(UUID.randomUUID().toString(), "Моя седьмая заметка",
                     "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffff6e40.toInt()),
-            Note("Моя шестая заметка",
-                    "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
-            Note("Моя шестая заметка",
-                    "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
-            Note("Моя шестая заметка",
-                    "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
-            Note("Моя шестая заметка",
-                    "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
-            Note("Моя шестая заметка",
-                    "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
-            Note("Моя шестая заметка",
-                    "Kotlin очень краткий, но при этом выразительный язык",
-                    0xffffeb3b.toInt()),
+                    Color.YELLOW)
     )
+
+    init {
+        notesLiveData.value = notes
+    }
+
+    fun getNotes(): LiveData<List<Note>> {
+        return notesLiveData
+    }
+
+
+    fun saveNote(note: Note) {
+        addOrReplace(note)
+        notesLiveData.value = notes
+    }
+
+    private fun addOrReplace(note: Note) {
+        for (i in notes.indices) {
+            if (notes[i] == note) {
+                notes[i] = note
+                return
+            }
+        }
+        notes.add(note)
+    }
 }
