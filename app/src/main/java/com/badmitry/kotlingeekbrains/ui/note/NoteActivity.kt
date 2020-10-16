@@ -6,12 +6,14 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelProvider
 import com.badmitry.kotlingeekbrains.R
 import com.badmitry.kotlingeekbrains.data.model.Color
 import com.badmitry.kotlingeekbrains.data.model.Note
+import com.badmitry.kotlingeekbrains.ui.App
 import com.badmitry.kotlingeekbrains.vm.NoteViewModel
 import kotlinx.android.synthetic.main.activity_note.*
 
@@ -45,12 +47,19 @@ class NoteActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this).get(NoteViewModel::class.java)
         viewModel.pendingNote = note
 
-        supportActionBar?.title = note?.lastChanged?: getString(R.string.new_note)
-
+        supportActionBar?.title = note?.lastChanged ?: getString(R.string.new_note)
+        viewModel.getLiveDataOnBackPressed().observe(this, { value ->
+            onBackPressed()
+        })
+        viewModel.getLiveDataIfTitleLessThree().observe(this, {
+            Toast.makeText(this, "Заголовок должен содержать не менее 3 символов!", Toast.LENGTH_SHORT).show()
+        })
         initView()
     }
 
     private fun initView() {
+        field_body.removeTextChangedListener(textChangeListener)
+        field_title.removeTextChangedListener(textChangeListener)
         note?.let {
             field_title.setText(it.title)
             field_body.setText(it.notes)
@@ -88,7 +97,7 @@ class NoteActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         android.R.id.home -> {
-            onBackPressed()
+            viewModel.onBackPressed()
             true
         }
         else -> super.onOptionsItemSelected(item)
