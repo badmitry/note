@@ -1,14 +1,10 @@
 package com.badmitry.kotlingeekbrains.data.model
 
-import android.os.Parcelable
-import kotlinx.android.parcel.Parcelize
-
-@Parcelize
-data class Note(val id: String,
+data class Note(val id: String = "",
                 val title: String = "",
                 val notes: String = "",
                 val color: Color = Color.WHITE,
-                val lastChanged: String = "") : Parcelable {
+                val lastChanged: String = "") {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

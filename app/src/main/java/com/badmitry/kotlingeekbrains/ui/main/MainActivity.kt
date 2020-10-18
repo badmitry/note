@@ -1,35 +1,40 @@
 package com.badmitry.kotlingeekbrains.ui.main
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.badmitry.kotlingeekbrains.R
+import com.badmitry.kotlingeekbrains.data.model.Note
+import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.ui.note.NoteActivity
 import com.badmitry.kotlingeekbrains.vm.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
 
-    private lateinit var viewModel: MainViewModel
+    override val viewModel: MainViewModel by lazy {
+        ViewModelProvider(this).get(MainViewModel::class.java)
+    }
+    override val layoutRes = R.layout.activity_main
     private lateinit var adapter: MainAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+
         rv_notes.layoutManager = GridLayoutManager(this, 2)
         adapter = MainAdapter() {
-            NoteActivity.startNoteActivity(this, it)
+            NoteActivity.startNoteActivity(this, it.id)
         }
         rv_notes.adapter = adapter
-
-        viewModel.viewState().observe(this, {value ->
-            value?.let {adapter.notes = it.notes}
-        })
-
         button_add.setOnClickListener {
-            NoteActivity.startNoteActivity(this)
+            viewModel.setOnAddButtonClicker()
         }
+        viewModel.getLiveDataOnButtonAddPressed().observe(this, { value ->
+            NoteActivity.startNoteActivity(this)
+        })
+    }
+
+    override fun renderData(data: List<Note>?) {
+        data?.let { adapter.notes = it }
     }
 }

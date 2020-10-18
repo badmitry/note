@@ -7,28 +7,31 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.MenuItem
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelProvider
 import com.badmitry.kotlingeekbrains.R
 import com.badmitry.kotlingeekbrains.data.model.Color
 import com.badmitry.kotlingeekbrains.data.model.Note
-import com.badmitry.kotlingeekbrains.ui.App
+import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.vm.NoteViewModel
 import kotlinx.android.synthetic.main.activity_note.*
+import kotlinx.android.synthetic.main.activity_note.toolbar
 
-class NoteActivity : AppCompatActivity() {
+class NoteActivity : BaseActivity<Note?, NoteViewState>() {
 
     companion object {
         private const val EXTRA_NOTE = "note"
-        fun startNoteActivity(context: Context, note: Note? = null) = Intent(context, NoteActivity::class.java).apply {
-            putExtra(EXTRA_NOTE, note)
+        fun startNoteActivity(context: Context, id: String? = null) = Intent(context, NoteActivity::class.java).apply {
+            putExtra(EXTRA_NOTE, id)
             context.startActivity(this)
         }
     }
 
+    override val viewModel: NoteViewModel by lazy {
+        ViewModelProvider(this).get(NoteViewModel::class.java)
+    }
+    override val layoutRes = R.layout.activity_note
     private var note: Note? = null
-    private lateinit var viewModel: NoteViewModel
 
 
     private val textChangeListener = object : TextWatcher {
@@ -39,21 +42,25 @@ class NoteActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_note)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        note = intent.getParcelableExtra(EXTRA_NOTE)
-        viewModel = ViewModelProvider(this).get(NoteViewModel::class.java)
-        viewModel.pendingNote = note
-
-        supportActionBar?.title = note?.lastChanged ?: getString(R.string.new_note)
+        val noteId = intent.getStringExtra(EXTRA_NOTE)
+        noteId?.let {
+            viewModel.loadNote(it)
+        } ?: let {
+            supportActionBar?.title = getString(R.string.new_note)
+        }
         viewModel.getLiveDataOnBackPressed().observe(this, { value ->
-            onBackPressed()
+            this.onBackPressed()
         })
         viewModel.getLiveDataIfTitleLessThree().observe(this, {
+            this.onBackPressed()
             Toast.makeText(this, "Заголовок должен содержать не менее 3 символов!", Toast.LENGTH_SHORT).show()
         })
+        button_del.setOnClickListener {
+            viewModel.setOnDelButtonClicker()
+        }
         initView()
     }
 
@@ -81,25 +88,17 @@ class NoteActivity : AppCompatActivity() {
         field_body.addTextChangedListener(textChangeListener)
     }
 
-//    private fun saveNote() {
-//        viewModel.saveNote(field_title.text, field_body.text)
-//        if (field_title.text == null || field_title.text!!.length < 3) return
-//
-//        note = note?.copy(
-//                title = field_title.text.toString(),
-//                notes = field_body.text.toString(),
-//                lastChanged = Date()
-//        )
-//                ?: Note(UUID.randomUUID().toString(), field_title.text.toString(), field_body.text.toString())
-//
-//        note?.let { viewModel.save(it) }
-//    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         android.R.id.home -> {
             viewModel.onBackPressed()
             true
         }
         else -> super.onOptionsItemSelected(item)
+    }
+
+    override fun renderData(data: Note?) {
+        this.note = data
+        supportActionBar?.title = note?.lastChanged ?: getString(R.string.new_note)
+        initView()
     }
 }

@@ -1,25 +1,51 @@
 package com.badmitry.kotlingeekbrains.vm
 
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.Observer
 import com.badmitry.kotlingeekbrains.data.Repository
 import com.badmitry.kotlingeekbrains.data.model.Note
-import com.badmitry.kotlingeekbrains.ui.App
-import com.badmitry.kotlingeekbrains.ui.main.MainViewState
+import com.badmitry.kotlingeekbrains.data.model.NoteResult
+import com.badmitry.kotlingeekbrains.ui.note.NoteViewState
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NoteViewModel : ViewModel() {
+class NoteViewModel : BaseViewModel<Note?, NoteViewState>() {
     private val DATE_TIME_FORMAT = "dd.MM.yy HH:mm"
     private val onBackPressedLiveData: MutableLiveData<Unit> = MutableLiveData()
     private val lengthTitleLessThreeLiveData: MutableLiveData<Unit> = MutableLiveData()
+    private var result: LiveData<NoteResult>? = null
+    private val observer = Observer { result: NoteResult? ->
+        result ?: return@Observer
+        when (result) {
+            is NoteResult.Success<*> -> {
+                val note = result.data as? Note
+                viewStateLiveData.value = NoteViewState(note)
+                pendingNote = note
+            }
+            is NoteResult.Error -> viewStateLiveData.value = NoteViewState(error = result.error)
+        }
+    }
+
+
     var pendingNote: Note? = null
 
-    override fun onCleared() {
+    init {
+        viewStateLiveData.value = NoteViewState()
+    }
+
+    fun setOnDelButtonClicker() {
         pendingNote?.let {
-            Repository.saveNote(it)
+            Repository.deleteNote(it)
+            pendingNote = null
+        }
+        onBackPressedLiveData.value = Unit
+    }
+
+    fun loadNote(id: String) {
+        result = Repository.getNoteById(id)
+        result.let {
+            it?.observeForever(observer)
         }
     }
 
@@ -31,6 +57,7 @@ class NoteViewModel : ViewModel() {
         val newTitle: String = pendingNote?.title ?: ""
         if (newTitle.length < 3) {
             lengthTitleLessThreeLiveData.value = Unit
+            return
         }
         onBackPressedLiveData.value = Unit
     }
@@ -42,5 +69,14 @@ class NoteViewModel : ViewModel() {
                 notes = text,
                 lastChanged = date
         ) ?: Note(UUID.randomUUID().toString(), title, text, lastChanged = date)
+    }
+
+    override fun onCleared() {
+        result.let {
+            it?.removeObserver(observer)
+        }
+        pendingNote?.let {
+            Repository.saveNote(it)
+        }
     }
 }

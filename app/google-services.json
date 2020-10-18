@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1017877152691",
+    "firebase_url": "https://kotlingeekbrains.firebaseio.com",
+    "project_id": "kotlingeekbrains",
+    "storage_bucket": "kotlingeekbrains.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1017877152691:android:068f837fc519573e31c1c6",
+        "android_client_info": {
+          "package_name": "com.badmitry.kotlingeekbrains"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1017877152691-ppvtdmj3ncfrqcbugki33uuntbjm7jd5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.badmitry.kotlingeekbrains",
+            "certificate_hash": "5405c0fa139eaa7642975e4352ac18a0d822338b"
+          }
+        },
+        {
+          "client_id": "1017877152691-oqsf7phruvvahdb7qgi979v4067dngp0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLeFfD00dkx6FWMftjXKsbgM1yyYt9czQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1017877152691-oqsf7phruvvahdb7qgi979v4067dngp0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
