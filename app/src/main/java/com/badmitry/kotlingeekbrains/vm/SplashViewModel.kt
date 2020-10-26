@@ -13,11 +13,14 @@ class SplashViewModel : BaseViewModel<Boolean?, SplashViewState>() {
     private val startMainActivityLiveData: MutableLiveData<Unit> = MutableLiveData()
     fun getStartMainActivityLiveData(): LiveData<Unit> = startMainActivityLiveData
 
-    private val observer = Observer { user: User? ->
-        user?.let { viewStateLiveData.value = SplashViewState(true) }
-                ?: let {
-                    viewStateLiveData.value = SplashViewState(error = NotAuthentication())
-                }
+    private val observer = object : Observer<User> {
+        override fun onChanged(t: User?) {
+            t?.let { viewStateLiveData.value = SplashViewState(true) }
+                    ?: let {
+                        viewStateLiveData.value = SplashViewState(error = NotAuthentication())
+                    }
+            userLiveData.removeObserver(this)
+        }
     }
 
     fun startMainActivity() {
@@ -27,7 +30,6 @@ class SplashViewModel : BaseViewModel<Boolean?, SplashViewState>() {
     fun requestUser() {
         userLiveData = Repository.getCurrentUser() as MutableLiveData<User>
         userLiveData.observeForever(observer)
-        userLiveData.removeObserver(observer)
     }
 
     override fun onCleared() {

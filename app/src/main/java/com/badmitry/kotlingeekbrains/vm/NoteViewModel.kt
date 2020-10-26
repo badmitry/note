@@ -15,18 +15,19 @@ class NoteViewModel : BaseViewModel<Note?, NoteViewState>() {
     private val onBackPressedLiveData: MutableLiveData<Unit> = MutableLiveData()
     private val lengthTitleLessThreeLiveData: MutableLiveData<Unit> = MutableLiveData()
     private var result: LiveData<NoteResult>? = null
-    private val observer = Observer { result: NoteResult? ->
-        result ?: return@Observer
-        when (result) {
-            is NoteResult.Success<*> -> {
-                val note = result.data as? Note
-                viewStateLiveData.value = NoteViewState(note)
-                pendingNote = note
+    private val observer = object : Observer<NoteResult> {
+        override fun onChanged(t: NoteResult?) {
+            when (t) {
+                is NoteResult.Success<*> -> {
+                    val note = t.data as? Note
+                    viewStateLiveData.value = NoteViewState(note)
+                    pendingNote = note
+                }
+                is NoteResult.Error -> viewStateLiveData.value = NoteViewState(error = t.error)
             }
-            is NoteResult.Error -> viewStateLiveData.value = NoteViewState(error = result.error)
+            result?.removeObserver(this)
         }
     }
-
 
     var pendingNote: Note? = null
 
