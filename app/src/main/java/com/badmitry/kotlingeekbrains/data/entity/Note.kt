@@ -1,4 +1,6 @@
-package com.badmitry.kotlingeekbrains.data.model
+package com.badmitry.kotlingeekbrains.data.entity
+
+import com.badmitry.kotlingeekbrains.data.model.Color
 
 data class Note(val id: String = "",
                 val title: String = "",
