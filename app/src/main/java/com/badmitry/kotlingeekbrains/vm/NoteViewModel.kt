@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.badmitry.kotlingeekbrains.data.Repository
-import com.badmitry.kotlingeekbrains.data.model.Note
+import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.model.NoteResult
 import com.badmitry.kotlingeekbrains.ui.note.NoteViewState
 import java.text.SimpleDateFormat

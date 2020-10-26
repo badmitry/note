@@ -7,11 +7,10 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.MenuItem
 import android.widget.Toast
-import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelProvider
 import com.badmitry.kotlingeekbrains.R
-import com.badmitry.kotlingeekbrains.data.model.Color
-import com.badmitry.kotlingeekbrains.data.model.Note
+import com.badmitry.kotlingeekbrains.data.entity.Note
+import com.badmitry.kotlingeekbrains.data.getColorInt
 import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.vm.NoteViewModel
 import kotlinx.android.synthetic.main.activity_note.*
@@ -42,6 +41,7 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        initView()
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
@@ -51,9 +51,7 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
         } ?: let {
             supportActionBar?.title = getString(R.string.new_note)
         }
-        viewModel.getLiveDataOnBackPressed().observe(this, { value ->
-            this.onBackPressed()
-        })
+        viewModel.getLiveDataOnBackPressed().observe(this, { this.onBackPressed() })
         viewModel.getLiveDataIfTitleLessThree().observe(this, {
             this.onBackPressed()
             Toast.makeText(this, "Заголовок должен содержать не менее 3 символов!", Toast.LENGTH_SHORT).show()
@@ -61,7 +59,6 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
         button_del.setOnClickListener {
             viewModel.setOnDelButtonClicker()
         }
-        initView()
     }
 
     private fun initView() {
@@ -70,18 +67,7 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
         note?.let {
             field_title.setText(it.title)
             field_body.setText(it.notes)
-
-            val color = when (it.color) {
-                Color.WHITE -> R.color.color_white
-                Color.YELLOW -> R.color.color_yellow
-                Color.GREEN -> R.color.color_green
-                Color.BLUE -> R.color.color_blue
-                Color.RED -> R.color.color_red
-                Color.VIOLET -> R.color.color_violet
-                Color.PINK -> R.color.color_pink
-            }
-
-            toolbar.setBackgroundColor(ResourcesCompat.getColor(resources, color, null))
+            toolbar.setBackgroundColor(it.color.getColorInt(this@NoteActivity))
         }
 
         field_title.addTextChangedListener(textChangeListener)

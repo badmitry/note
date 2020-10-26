@@ -4,4 +4,8 @@
     <string name="title">Заголовок</string>
     <string name="text_of_note">Текст заметки</string>
     <string name="new_note">Новая заметка.</string>
+    <string name="logout_menu_title">Выход</string>
+    <string name="logout_message">Вы уверены?</string>
+    <string name="logout_ok">Да</string>
+    <string name="logout_cancel">Нет</string>
 </resources>
