@@ -2,6 +2,7 @@ package com.badmitry.kotlingeekbrains.data.provider
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.badmitry.kotlingeekbrains.data.CheckerInternetConnection
 import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.entity.User
 import com.badmitry.kotlingeekbrains.data.error.NotAuthentication
@@ -10,7 +11,8 @@ import com.badmitry.kotlingeekbrains.data.model.NoteResult.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-class FirebaseDataProvider : DataProvider {
+class FirebaseDataProvider(private val firebaseAuth: FirebaseAuth, private val db: FirebaseFirestore,
+                           private val checkerInternetConnection: CheckerInternetConnection) : DataProvider {
 
     companion object {
         private const val NOTES_COLLECTION = "notes"
@@ -19,21 +21,24 @@ class FirebaseDataProvider : DataProvider {
 
 
     private val currentUser
-        get() = FirebaseAuth.getInstance().currentUser
+        get() = firebaseAuth.currentUser
 
     override fun getCurrentUser() = MutableLiveData<User>().apply {
         value = currentUser?.let { User(it.displayName ?: "", it.email ?: "") }
     }
 
-    private val store by lazy { FirebaseFirestore.getInstance() }
+    override fun checkInternetConnection(): Boolean {
+        return checkerInternetConnection.isConnection()
+    }
+
     private val notesReference
-        get() = currentUser?.let { store.collection(USERS_COLLECTION).document(it.uid).collection(NOTES_COLLECTION) }
+        get() = currentUser?.let { db.collection(USERS_COLLECTION).document(it.uid).collection(NOTES_COLLECTION) }
                 ?: throw NotAuthentication()
 
     override fun getNotes(): LiveData<NoteResult> =
             MutableLiveData<NoteResult>().apply {
                 notesReference.addSnapshotListener { snapshot, error ->
-                    value = error?.let { NoteResult.Error(it) } ?: snapshot?.let {
+                    value = error?.let { Error(it) } ?: snapshot?.let {
                         val notes = it.documents.map { it.toObject(Note::class.java) }
                         Success(notes)
                     }
@@ -61,10 +66,10 @@ class FirebaseDataProvider : DataProvider {
             }
 
 
-    override fun deleteNote(note: Note): LiveData<NoteResult> =
+    override fun deleteNote(id: String): LiveData<NoteResult> =
             MutableLiveData<NoteResult>().apply {
-                notesReference.document(note.id).delete()
-                        .addOnSuccessListener { value = Success(note) }
+                notesReference.document(id).delete()
+                        .addOnSuccessListener { value = Success(null) }
                         .addOnFailureListener { value = Error(it) }
             }
 

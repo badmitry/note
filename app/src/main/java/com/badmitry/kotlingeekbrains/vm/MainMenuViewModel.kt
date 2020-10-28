@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
-class MenuViewModel : ViewModel() {
+class MainMenuViewModel : ViewModel() {
     private val startLogoutDialogLiveData = MutableLiveData<Unit>()
     private val logoutOkLiveData = MutableLiveData<Unit>()
 

@@ -8,4 +8,12 @@
     <string name="logout_message">Вы уверены?</string>
     <string name="logout_ok">Да</string>
     <string name="logout_cancel">Нет</string>
+    <string name="chenge_color">Сменить цвет</string>
+    <string name="delete_menu_title">Удалить заметку</string>
+    <string name="delete_message">Удалить текущую заметку?</string>
+    <string name="del_ok">Ок</string>
+    <string name="internet_connection_varning">Внимание!</string>
+    <string name="internet_connection_message">Интернет соединение не установленно</string>
+    <string name="internet_reconnection">Попробовать снова</string>
+    <string name="exist">Выйти</string>
 </resources>

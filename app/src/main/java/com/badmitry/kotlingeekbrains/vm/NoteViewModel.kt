@@ -5,16 +5,29 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.badmitry.kotlingeekbrains.data.Repository
 import com.badmitry.kotlingeekbrains.data.entity.Note
+import com.badmitry.kotlingeekbrains.data.model.Color
 import com.badmitry.kotlingeekbrains.data.model.NoteResult
 import com.badmitry.kotlingeekbrains.ui.note.NoteViewState
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NoteViewModel : BaseViewModel<Note?, NoteViewState>() {
+class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, NoteViewState>(repository) {
     private val DATE_TIME_FORMAT = "dd.MM.yy HH:mm"
     private val onBackPressedLiveData: MutableLiveData<Unit> = MutableLiveData()
     private val lengthTitleLessThreeLiveData: MutableLiveData<Unit> = MutableLiveData()
+    private val startDelDialogLiveData = MutableLiveData<Unit>()
+    private val showPaletteLiveData = MutableLiveData<Boolean>()
+    private val changeColorLiveData = MutableLiveData<Color>()
+    private val showProgressBarLiveData = MutableLiveData<Unit>()
     private var result: LiveData<NoteResult>? = null
+    var pendingNote: Note? = null
+    fun getStartDilDialogLiveData(): LiveData<Unit> = startDelDialogLiveData
+    fun getLiveDataOnBackPressed(): LiveData<Unit> = onBackPressedLiveData
+    fun getLiveDataIfTitleLessThree(): LiveData<Unit> = lengthTitleLessThreeLiveData
+    fun getShowPaletteLiveData(): LiveData<Boolean> = showPaletteLiveData
+    fun getChangeColorLiveData(): LiveData<Color> = changeColorLiveData
+    fun getShowProgressBarLiveData(): LiveData<Unit> = showProgressBarLiveData
+
     private val observer = object : Observer<NoteResult> {
         override fun onChanged(t: NoteResult?) {
             when (t) {
@@ -25,34 +38,41 @@ class NoteViewModel : BaseViewModel<Note?, NoteViewState>() {
                 }
                 is NoteResult.Error -> viewStateLiveData.value = NoteViewState(error = t.error)
             }
+            showProgressBar()
             result?.removeObserver(this)
         }
     }
-
-    var pendingNote: Note? = null
 
     init {
         viewStateLiveData.value = NoteViewState()
     }
 
-    fun setOnDelButtonClicker() {
-        pendingNote?.let {
-            Repository.deleteNote(it)
-            pendingNote = null
+    fun startDelDialog() {
+        startDelDialogLiveData.value = Unit
+    }
+
+    fun deleteNote(id: String?) {
+        id?.let {
+            repository.deleteNote(id)
         }
+        pendingNote = null
         onBackPressedLiveData.value = Unit
     }
 
+    fun togglePalette() {
+        showPaletteLiveData.value = showPaletteLiveData.value == false
+    }
+
     fun loadNote(id: String) {
-        result = Repository.getNoteById(id)
+        result = repository.getNoteById(id)
         result.let {
             it?.observeForever(observer)
         }
     }
 
-    fun getLiveDataOnBackPressed(): LiveData<Unit> = onBackPressedLiveData
-
-    fun getLiveDataIfTitleLessThree(): LiveData<Unit> = lengthTitleLessThreeLiveData
+    fun showProgressBar() {
+        showProgressBarLiveData.value = Unit
+    }
 
     fun onBackPressed() {
         val newTitle: String = pendingNote?.title ?: ""
@@ -72,12 +92,21 @@ class NoteViewModel : BaseViewModel<Note?, NoteViewState>() {
         ) ?: Note(UUID.randomUUID().toString(), title, text, lastChanged = date)
     }
 
+    fun changeNoteColor(color: Color) {
+        val date = SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date())
+        pendingNote = pendingNote?.copy(
+                color = color,
+                lastChanged = date
+        ) ?: Note(UUID.randomUUID().toString(), "", "", lastChanged = date)
+        changeColorLiveData.value = color
+    }
+
     override fun onCleared() {
         result.let {
             it?.removeObserver(observer)
         }
         pendingNote?.let {
-            Repository.saveNote(it)
+            repository.saveNote(it)
         }
     }
 }

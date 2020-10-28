@@ -9,7 +9,8 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.badmitry.kotlingeekbrains.R
 import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.getColorInt
-import kotlinx.android.synthetic.main.item_note.view.*
+import kotlinx.android.extensions.LayoutContainer
+import kotlinx.android.synthetic.main.item_note.*
 
 class MainAdapter(val onClickListener: ((Note) -> Unit)? = null) : RecyclerView.Adapter<MainAdapter.NoteViewHolder>() {
 
@@ -31,17 +32,15 @@ class MainAdapter(val onClickListener: ((Note) -> Unit)? = null) : RecyclerView.
     override fun onBindViewHolder(holder: NoteViewHolder, position: Int) = holder.bind(notes[position])
     override fun getItemCount() = notes.size
 
-    inner class NoteViewHolder(itemView: View) : ViewHolder(itemView) {
+    inner class NoteViewHolder(override val containerView: View) : ViewHolder(containerView), LayoutContainer {
 
         fun bind(note: Note) {
-            with(itemView as CardView) {
-                with(note) {
-                    note_title.text = title
-                    note_text.text = notes
-                    setCardBackgroundColor(color.getColorInt(context))
-                    setOnClickListener {
-                        onClickListener?.invoke(note)
-                    }
+            with(note) {
+                note_title.text = title
+                note_text.text = notes
+                (itemView as CardView).setCardBackgroundColor(color.getColorInt(containerView.context))
+                itemView.setOnClickListener {
+                    onClickListener?.invoke(note)
                 }
             }
         }

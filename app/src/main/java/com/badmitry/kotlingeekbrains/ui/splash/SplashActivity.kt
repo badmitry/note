@@ -3,10 +3,10 @@ package com.badmitry.kotlingeekbrains.ui.splash
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.lifecycle.ViewModelProvider
 import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.ui.main.MainActivity
 import com.badmitry.kotlingeekbrains.vm.SplashViewModel
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class SplashActivity : BaseActivity<Boolean?, SplashViewState>() {
     companion object {
@@ -15,7 +15,7 @@ class SplashActivity : BaseActivity<Boolean?, SplashViewState>() {
         }
     }
 
-    override val viewModel by lazy { ViewModelProvider(this).get(SplashViewModel::class.java) }
+    override val viewModel: SplashViewModel by viewModel()
     override val layoutRes: Int? = null
 
     override fun onResume() {
@@ -38,6 +38,4 @@ class SplashActivity : BaseActivity<Boolean?, SplashViewState>() {
         MainActivity.start(this)
         finish()
     }
-
-
 }

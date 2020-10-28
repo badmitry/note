@@ -1,6 +1,7 @@
 package com.badmitry.kotlingeekbrains.ui
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -16,6 +17,7 @@ abstract class BaseActivity<T, S : BaseViewState<T>> : AppCompatActivity() {
 
     abstract val viewModel: BaseViewModel<T, S>
     abstract val layoutRes: Int?
+    private var error: Throwable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,16 +26,38 @@ abstract class BaseActivity<T, S : BaseViewState<T>> : AppCompatActivity() {
         }
         viewModel.getViewState().observe(this, { value ->
             value ?: return@observe
-            value.error?.let {
+            error = value.error
+            error?.let {
                 renderError(it)
                 return@observe
             }
             renderData(value.data)
         })
         viewModel.getNotAuthenticationLiveData().observe(this, { startLoginActivity() })
+        viewModel.getNotInternetConnectionLiveData().observe(this, { alertAboutInternetConnection() })
+        viewModel.getIsReconnectionLiveData().observe(this, { value ->
+            if (value) {
+                error?.let {
+                    renderError(it)
+                } ?: finish()
+            } else {
+                finish()
+            }
+        })
         viewModel.getShowErrorLiveData().observe(this, { value ->
             showError(value)
         })
+    }
+
+    private fun alertAboutInternetConnection() {
+        AlertDialog.Builder(this)
+                .setTitle(R.string.internet_connection_varning)
+                .setMessage(R.string.internet_connection_message)
+                .setPositiveButton(R.string.internet_reconnection) { dialog, which ->
+                    viewModel.reconnectionToInternet(true)
+                }
+                .setNegativeButton(R.string.exist) { dialog, which -> viewModel.reconnectionToInternet(false) }
+                .show()
     }
 
     protected fun renderError(error: Throwable) {

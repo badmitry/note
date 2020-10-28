@@ -9,6 +9,7 @@ interface DataProvider {
     fun getNotes(): LiveData<NoteResult>
     fun saveNote(note: Note): LiveData<NoteResult>
     fun getNoteById(id: String): LiveData<NoteResult>
-    fun deleteNote(note: Note): LiveData<NoteResult>
+    fun deleteNote(id: String): LiveData<NoteResult>
     fun getCurrentUser(): LiveData<User>
+    fun checkInternetConnection(): Boolean
 }
