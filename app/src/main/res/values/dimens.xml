@@ -2,4 +2,5 @@
 <resources>
     <dimen name="main_margin">8dp</dimen>
     <dimen name="notes_margin">16dp</dimen>
+    <dimen name="min_width_notes">1000dp</dimen>
 </resources>

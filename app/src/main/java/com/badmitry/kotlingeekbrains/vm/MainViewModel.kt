@@ -8,7 +8,7 @@ import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.model.NoteResult
 import com.badmitry.kotlingeekbrains.ui.main.MainViewState
 
-class MainViewModel : BaseViewModel<List<Note>?, MainViewState>() {
+class MainViewModel (repository: Repository) : BaseViewModel<List<Note>?, MainViewState>(repository) {
 
     private val notesObserver = Observer { result: NoteResult? ->
         result ?: return@Observer
@@ -19,20 +19,19 @@ class MainViewModel : BaseViewModel<List<Note>?, MainViewState>() {
     }
 
     private val onAddButtonClickLiveData: MutableLiveData<Unit> = MutableLiveData()
+    private val repositoryNotes = repository.getNotes()
 
     fun setOnAddButtonClicker() {
         onAddButtonClickLiveData.value = Unit
     }
 
-    private val repository = Repository.getNotes()
-
     init {
-        repository.observeForever(notesObserver)
+        repositoryNotes.observeForever(notesObserver)
     }
 
     override fun onCleared() {
         super.onCleared()
-        repository.removeObserver(notesObserver)
+        repositoryNotes.removeObserver(notesObserver)
     }
 
     fun getLiveDataOnButtonAddPressed(): LiveData<Unit> = onAddButtonClickLiveData

@@ -15,9 +15,10 @@ import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.ui.note.NoteActivity
 import com.badmitry.kotlingeekbrains.ui.splash.SplashActivity
 import com.badmitry.kotlingeekbrains.vm.MainViewModel
-import com.badmitry.kotlingeekbrains.vm.MenuViewModel
+import com.badmitry.kotlingeekbrains.vm.MainMenuViewModel
 import com.firebase.ui.auth.AuthUI
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.android.viewmodel.ext.android.viewModel
 
 
 class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
@@ -28,12 +29,10 @@ class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
         }
     }
 
-    override val viewModel: MainViewModel by lazy {
-        ViewModelProvider(this).get(MainViewModel::class.java)
-    }
+    override val viewModel: MainViewModel by viewModel()
 
-    private val viewModelForMenuItem: MenuViewModel by lazy {
-        ViewModelProvider(this).get(MenuViewModel::class.java)
+    private val viewModelForMainMenuItem: MainMenuViewModel by lazy {
+        ViewModelProvider(this).get(MainMenuViewModel::class.java)
     }
     override val layoutRes = R.layout.activity_main
     private lateinit var adapter: MainAdapter
@@ -51,8 +50,8 @@ class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
             viewModel.setOnAddButtonClicker()
         }
         viewModel.getLiveDataOnButtonAddPressed().observe(this, { NoteActivity.startNoteActivity(this) })
-        viewModelForMenuItem.getStartLogoutDialogLiveData().observe(this, { showLogoutDialog() })
-        viewModelForMenuItem.getLogoutOkLiveData().observe(this, { logout() })
+        viewModelForMainMenuItem.getStartLogoutDialogLiveData().observe(this, { showLogoutDialog() })
+        viewModelForMainMenuItem.getLogoutOkLiveData().observe(this, { logout() })
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean =
@@ -60,7 +59,7 @@ class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
             when (item.itemId) {
-                R.id.logout -> viewModelForMenuItem.showLogoutDialog().let { true }
+                R.id.logout -> viewModelForMainMenuItem.showLogoutDialog().let { true }
                 else -> false
             }
 
@@ -69,7 +68,7 @@ class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
                 .setTitle(R.string.logout_menu_title)
                 .setMessage(R.string.logout_message)
                 .setPositiveButton(R.string.logout_ok) { dialog, which ->
-                    viewModelForMenuItem.logoutOk()
+                    viewModelForMainMenuItem.logoutOk()
                 }
                 .setNegativeButton(R.string.logout_cancel) { dialog, which -> dialog.dismiss() }
                 .show()

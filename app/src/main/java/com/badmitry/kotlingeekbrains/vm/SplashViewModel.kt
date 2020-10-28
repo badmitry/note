@@ -8,8 +8,8 @@ import com.badmitry.kotlingeekbrains.data.entity.User
 import com.badmitry.kotlingeekbrains.data.error.NotAuthentication
 import com.badmitry.kotlingeekbrains.ui.splash.SplashViewState
 
-class SplashViewModel : BaseViewModel<Boolean?, SplashViewState>() {
-    private var userLiveData: MutableLiveData<User> = Repository.getCurrentUser() as MutableLiveData<User>
+class SplashViewModel (private val repository: Repository) : BaseViewModel<Boolean?, SplashViewState>(repository) {
+    private var userLiveData: MutableLiveData<User> = MutableLiveData()
     private val startMainActivityLiveData: MutableLiveData<Unit> = MutableLiveData()
     fun getStartMainActivityLiveData(): LiveData<Unit> = startMainActivityLiveData
 
@@ -28,7 +28,7 @@ class SplashViewModel : BaseViewModel<Boolean?, SplashViewState>() {
     }
 
     fun requestUser() {
-        userLiveData = Repository.getCurrentUser() as MutableLiveData<User>
+        userLiveData = repository.getCurrentUser() as MutableLiveData<User>
         userLiveData.observeForever(observer)
     }
 
