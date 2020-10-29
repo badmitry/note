@@ -4,6 +4,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.net.SocketAddress
 
 
 class CheckerInternetConnection(val context: Context) {
@@ -26,25 +30,15 @@ class CheckerInternetConnection(val context: Context) {
     }
 
     private fun isInternetAvailable(): Boolean{
-//        return try {
-//            val sock = Socket()
-//            val sockaddr: SocketAddress = InetSocketAddress("8.8.8.8", 53)
-//            sock.connect(sockaddr, 1) // This will block no more than timeoutMs
-//            sock.close()
-//            true
-//        } catch (e: IOException) {
-//            false
-//        }
-////or///////
-//        try {
-//            val address: InetAddress = InetAddress.getByName("www.google.com")
-//            return !address.equals("")
-//        } catch (e: UnknownHostException) {
-//            // Log error
-//        }
-//        return false
-        //add AsyncTask
-        return true
+        return try {
+            val sock = Socket()
+            val sockaddr: SocketAddress = InetSocketAddress("8.8.8.8", 53)
+            sock.connect(sockaddr, 1000)
+            sock.close()
+            true
+        } catch (e: IOException) {
+            false
+        }
     }
 
 }
