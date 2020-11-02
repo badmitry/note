@@ -45,5 +45,4 @@ class MainAdapter(val onClickListener: ((Note) -> Unit)? = null) : RecyclerView.
             }
         }
     }
-
 }

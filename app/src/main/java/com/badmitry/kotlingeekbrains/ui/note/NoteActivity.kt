@@ -82,7 +82,7 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
                 .setTitle(R.string.delete_menu_title)
                 .setMessage(R.string.delete_message)
                 .setPositiveButton(R.string.del_ok) { dialog, which ->
-                    viewModel.deleteNote(noteId)
+                    viewModel.deleteNote()
                 }
                 .setNegativeButton(R.string.logout_cancel) { dialog, which -> dialog.dismiss() }
                 .show()

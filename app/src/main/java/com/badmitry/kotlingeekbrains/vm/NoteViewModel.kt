@@ -1,5 +1,6 @@
 package com.badmitry.kotlingeekbrains.vm
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -51,9 +52,9 @@ class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, 
         startDelDialogLiveData.value = Unit
     }
 
-    fun deleteNote(id: String?) {
-        id?.let {
-            repository.deleteNote(id)
+    fun deleteNote() {
+        pendingNote?.id?.let {
+            repository.deleteNote(it)
         }
         pendingNote = null
         onBackPressedLiveData.value = Unit
@@ -65,9 +66,7 @@ class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, 
 
     fun loadNote(id: String) {
         result = repository.getNoteById(id)
-        result.let {
-            it?.observeForever(observer)
-        }
+        result?.observeForever(observer)
     }
 
     fun showProgressBar() {
@@ -101,7 +100,8 @@ class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, 
         changeColorLiveData.value = color
     }
 
-    override fun onCleared() {
+    @VisibleForTesting
+    public override fun onCleared() {
         result.let {
             it?.removeObserver(observer)
         }
