@@ -33,7 +33,7 @@ class CheckerInternetConnection(val context: Context) {
         return try {
             val sock = Socket()
             val sockaddr: SocketAddress = InetSocketAddress("8.8.8.8", 53)
-            sock.connect(sockaddr, 1000)
+            sock.connect(sockaddr, 10000)
             sock.close()
             true
         } catch (e: IOException) {

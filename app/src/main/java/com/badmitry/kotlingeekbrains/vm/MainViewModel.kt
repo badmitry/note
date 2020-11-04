@@ -1,5 +1,6 @@
 package com.badmitry.kotlingeekbrains.vm
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -29,7 +30,8 @@ class MainViewModel (repository: Repository) : BaseViewModel<List<Note>?, MainVi
         repositoryNotes.observeForever(notesObserver)
     }
 
-    override fun onCleared() {
+    @VisibleForTesting
+    public override fun onCleared() {
         super.onCleared()
         repositoryNotes.removeObserver(notesObserver)
     }
