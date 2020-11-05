@@ -1,85 +1,77 @@
 package com.badmitry.kotlingeekbrains.vm
 
-import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import com.badmitry.kotlingeekbrains.data.Repository
 import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.model.Color
-import com.badmitry.kotlingeekbrains.data.model.NoteResult
-import com.badmitry.kotlingeekbrains.ui.note.NoteViewState
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, NoteViewState>(repository) {
+class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(repository) {
     private val DATE_TIME_FORMAT = "dd.MM.yy HH:mm"
-    private val onBackPressedLiveData: MutableLiveData<Unit> = MutableLiveData()
-    private val lengthTitleLessThreeLiveData: MutableLiveData<Unit> = MutableLiveData()
-    private val startDelDialogLiveData = MutableLiveData<Unit>()
-    private val showPaletteLiveData = MutableLiveData<Boolean>()
-    private val changeColorLiveData = MutableLiveData<Color>()
-    private val showProgressBarLiveData = MutableLiveData<Unit>()
-    private var result: LiveData<NoteResult>? = null
-    var pendingNote: Note? = null
-    fun getStartDilDialogLiveData(): LiveData<Unit> = startDelDialogLiveData
-    fun getLiveDataOnBackPressed(): LiveData<Unit> = onBackPressedLiveData
-    fun getLiveDataIfTitleLessThree(): LiveData<Unit> = lengthTitleLessThreeLiveData
-    fun getShowPaletteLiveData(): LiveData<Boolean> = showPaletteLiveData
-    fun getChangeColorLiveData(): LiveData<Color> = changeColorLiveData
-    fun getShowProgressBarLiveData(): LiveData<Unit> = showProgressBarLiveData
+    private val onBackPressedChannel = Channel<Unit>()
+    private val isTitleLessThreeChannel = Channel<Unit>()
+    private val startDelDialogChannel = Channel<Unit>()
+    private val showPaletteChannel = Channel<Boolean>()
+    private val changeColorChannel = Channel<Color>()
+    private val hideProgressBarChannel = Channel<Boolean>()
+    private var pendingNote: Note? = null
+    private var showPalette = false
+    fun getStartDelDialogChannel() = startDelDialogChannel
+    fun getOnBackPressedChannel() = onBackPressedChannel
+    fun isTitleLessThreeChannel() = isTitleLessThreeChannel
+    fun getShowPaletteChannel() = showPaletteChannel
+    fun getChangeColorChannel() = changeColorChannel
+    fun getHideProgressBarChannel() = hideProgressBarChannel
 
-    private val observer = object : Observer<NoteResult> {
-        override fun onChanged(t: NoteResult?) {
-            when (t) {
-                is NoteResult.Success<*> -> {
-                    val note = t.data as? Note
-                    viewStateLiveData.value = NoteViewState(note)
-                    pendingNote = note
+    suspend fun startDelDialog() {
+        startDelDialogChannel.send(Unit)
+    }
+
+    suspend fun deleteNote() {
+        try {
+            pendingNote?.id?.let {
+                launch {
+                    repository.deleteNote(it)
                 }
-                is NoteResult.Error -> viewStateLiveData.value = NoteViewState(error = t.error)
             }
-            showProgressBar()
-            result?.removeObserver(this)
+            pendingNote = null
+            onBackPressedChannel.send(Unit)
+        } catch (e: Throwable) {
+            setError(e)
         }
     }
 
-    init {
-        viewStateLiveData.value = NoteViewState()
+    suspend fun togglePalette() {
+        showPalette = !showPalette
+        showPaletteChannel.send(showPalette)
     }
 
-    fun startDelDialog() {
-        startDelDialogLiveData.value = Unit
-    }
-
-    fun deleteNote() {
-        pendingNote?.id?.let {
-            repository.deleteNote(it)
+    suspend fun loadNote(id: String) = launch {
+        try {
+            repository.getNoteById(id).let {
+                pendingNote = it
+                setData(it)
+                hideProgressBar()
+            }
+        } catch (e: Throwable) {
+            setError(e)
         }
-        pendingNote = null
-        onBackPressedLiveData.value = Unit
     }
 
-    fun togglePalette() {
-        showPaletteLiveData.value = showPaletteLiveData.value == false
+    suspend fun hideProgressBar() {
+            hideProgressBarChannel.send(true)
     }
 
-    fun loadNote(id: String) {
-        result = repository.getNoteById(id)
-        result?.observeForever(observer)
-    }
-
-    fun showProgressBar() {
-        showProgressBarLiveData.value = Unit
-    }
-
-    fun onBackPressed() {
+    suspend fun onBackPressed() {
         val newTitle: String = pendingNote?.title ?: ""
         if (newTitle.length < 3) {
-            lengthTitleLessThreeLiveData.value = Unit
+            isTitleLessThreeChannel.send(Unit)
+            pendingNote = null
             return
         }
-        onBackPressedLiveData.value = Unit
+        onBackPressedChannel.send(Unit)
     }
 
     fun saveNote(title: String, text: String) {
@@ -91,22 +83,20 @@ class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, 
         ) ?: Note(UUID.randomUUID().toString(), title, text, lastChanged = date)
     }
 
-    fun changeNoteColor(color: Color) {
+    suspend fun changeNoteColor(color: Color) {
         val date = SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date())
         pendingNote = pendingNote?.copy(
                 color = color,
                 lastChanged = date
-        ) ?: Note(UUID.randomUUID().toString(), "", "", lastChanged = date)
-        changeColorLiveData.value = color
+        ) ?: Note(UUID.randomUUID().toString(), "", "", color, date)
+        changeColorChannel.send(color)
     }
 
-    @VisibleForTesting
     public override fun onCleared() {
-        result.let {
-            it?.removeObserver(observer)
-        }
         pendingNote?.let {
-            repository.saveNote(it)
+            launch {
+                repository.saveNote(it)
+            }
         }
     }
 }

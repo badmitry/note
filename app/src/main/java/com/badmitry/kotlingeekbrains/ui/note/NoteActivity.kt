@@ -18,10 +18,12 @@ import com.badmitry.kotlingeekbrains.data.model.Color
 import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.vm.NoteViewModel
 import kotlinx.android.synthetic.main.activity_note.*
-import kotlinx.android.synthetic.main.activity_note.toolbar
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import org.koin.android.viewmodel.ext.android.viewModel
 
-class NoteActivity : BaseActivity<Note?, NoteViewState>() {
+class NoteActivity : BaseActivity<Note?>() {
 
     companion object {
         private const val EXTRA_NOTE = "note"
@@ -36,6 +38,12 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
     override val viewModel: NoteViewModel by viewModel()
     override val layoutRes = R.layout.activity_note
     private var note: Note? = null
+    private lateinit var hideProgressBarJob: Job
+    private lateinit var onBackPressedJob: Job
+    private lateinit var isTitleLessThreeJob: Job
+    private lateinit var delDialogJob: Job
+    private lateinit var showPaletteJob: Job
+    private lateinit var changeColorJob: Job
 
 
     private val textChangeListener = object : TextWatcher {
@@ -48,33 +56,61 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
         super.onCreate(savedInstanceState)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        viewModel.getShowProgressBarLiveData().observe(this, { hideProgressBar() })
         noteId = intent.getStringExtra(EXTRA_NOTE)
         noteId?.let {
-            viewModel.loadNote(it)
-        } ?: let {
-            supportActionBar?.title = getString(R.string.new_note)
-            viewModel.showProgressBar()
-        }
-        viewModel.getLiveDataOnBackPressed().observe(this, { this.onBackPressed() })
-        viewModel.getLiveDataIfTitleLessThree().observe(this, {
-            this.onBackPressed()
-            Toast.makeText(this, "Заголовок должен содержать не менее 3 символов!", Toast.LENGTH_SHORT).show()
-        })
-        viewModel.getStartDilDialogLiveData().observe(this, { this.startDelDialog() })
-        colorPicker.onColorClickListener = {
-            viewModel.changeNoteColor(it)
-        }
-        viewModel.getShowPaletteLiveData().observe(this, {
-            if (it) {
-                colorPicker.close()
-            } else {
-                colorPicker.open()
+            launch {
+                viewModel.loadNote(it)
             }
-        })
-        viewModel.getChangeColorLiveData().observe(this, {
-            changeBackgroundColor(it)
-        })
+        } ?: let {
+            launch {
+                viewModel.hideProgressBar()
+            }
+        }
+        colorPicker.onColorClickListener = {
+            launch {
+                viewModel.changeNoteColor(it)
+            }
+        }
+        initView()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        showPaletteJob = launch {
+            viewModel.getShowPaletteChannel().consumeEach {
+                if (it) {
+                    colorPicker.open()
+                } else {
+                    colorPicker.close()
+                }
+            }
+        }
+        hideProgressBarJob = launch {
+            viewModel.getHideProgressBarChannel().consumeEach {
+                hideProgressBar()
+            }
+        }
+        onBackPressedJob = launch {
+            viewModel.getOnBackPressedChannel().consumeEach {
+                this@NoteActivity.onBackPressed()
+            }
+        }
+        isTitleLessThreeJob = launch {
+            viewModel.isTitleLessThreeChannel().consumeEach {
+                this@NoteActivity.onBackPressed()
+                Toast.makeText(this@NoteActivity, "Заголовок должен содержать не менее 3 символов!", Toast.LENGTH_SHORT).show()
+            }
+        }
+        delDialogJob = launch {
+            viewModel.getStartDelDialogChannel().consumeEach {
+                this@NoteActivity.startDelDialog()
+            }
+        }
+        changeColorJob = launch {
+            viewModel.getChangeColorChannel().consumeEach {
+                changeBackgroundColor(it)
+            }
+        }
     }
 
     private fun startDelDialog() {
@@ -82,16 +118,18 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
                 .setTitle(R.string.delete_menu_title)
                 .setMessage(R.string.delete_message)
                 .setPositiveButton(R.string.del_ok) { dialog, which ->
-                    viewModel.deleteNote()
+                    launch {
+                        viewModel.deleteNote()
+                    }
                 }
                 .setNegativeButton(R.string.logout_cancel) { dialog, which -> dialog.dismiss() }
                 .show()
     }
 
     private fun hideProgressBar() {
-            appbar.visibility = View.VISIBLE
-            list_item.visibility = View.VISIBLE
-            progress_bar.visibility = View.INVISIBLE
+        appbar.visibility = View.VISIBLE
+        list_item.visibility = View.VISIBLE
+        progress_bar.visibility = View.INVISIBLE
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean =
@@ -100,11 +138,23 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
             when (item.itemId) {
                 android.R.id.home -> {
-                    viewModel.onBackPressed()
+                    launch {
+                        viewModel.onBackPressed()
+                    }
                     true
                 }
-                R.id.palette -> viewModel.togglePalette().let { true }
-                R.id.delete -> viewModel.startDelDialog().let { true }
+                R.id.palette -> {
+                    launch {
+                        viewModel.togglePalette()
+                    }
+                    true
+                }
+                R.id.delete -> {
+                    launch {
+                        viewModel.startDelDialog()
+                    }
+                    true
+                }
                 else -> super.onOptionsItemSelected(item)
             }
 

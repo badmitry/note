@@ -1,38 +1,24 @@
 package com.badmitry.kotlingeekbrains.vm
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import com.badmitry.kotlingeekbrains.data.Repository
-import com.badmitry.kotlingeekbrains.data.entity.User
 import com.badmitry.kotlingeekbrains.data.error.NotAuthentication
-import com.badmitry.kotlingeekbrains.ui.splash.SplashViewState
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
-class SplashViewModel (private val repository: Repository) : BaseViewModel<Boolean?, SplashViewState>(repository) {
-    private var userLiveData: MutableLiveData<User> = MutableLiveData()
-    private val startMainActivityLiveData: MutableLiveData<Unit> = MutableLiveData()
-    fun getStartMainActivityLiveData(): LiveData<Unit> = startMainActivityLiveData
+class SplashViewModel (private val repository: Repository) : BaseViewModel<Boolean?>(repository) {
+    private val startMainActivityChannel = Channel<Unit>()
+    fun getStartMainActivityChannel(): Channel<Unit> = startMainActivityChannel
 
-    private val observer = object : Observer<User> {
-        override fun onChanged(t: User?) {
-            t?.let { viewStateLiveData.value = SplashViewState(true) }
-                    ?: let {
-                        viewStateLiveData.value = SplashViewState(error = NotAuthentication())
-                    }
-            userLiveData.removeObserver(this)
-        }
-    }
-
-    fun startMainActivity() {
-        startMainActivityLiveData.value = Unit
+    suspend fun startMainActivity() {
+        startMainActivityChannel.send(Unit)
     }
 
     fun requestUser() {
-        userLiveData = repository.getCurrentUser() as MutableLiveData<User>
-        userLiveData.observeForever(observer)
-    }
-
-    override fun onCleared() {
-        userLiveData.removeObserver(observer)
+        launch {
+            repository.getCurrentUser()?.let {
+                setData(true)
+                startMainActivity()
+            } ?: setError(NotAuthentication())
+        }
     }
 }

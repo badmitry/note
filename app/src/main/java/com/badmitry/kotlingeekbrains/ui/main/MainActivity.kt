@@ -14,14 +14,17 @@ import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.ui.note.NoteActivity
 import com.badmitry.kotlingeekbrains.ui.splash.SplashActivity
-import com.badmitry.kotlingeekbrains.vm.MainViewModel
 import com.badmitry.kotlingeekbrains.vm.MainMenuViewModel
+import com.badmitry.kotlingeekbrains.vm.MainViewModel
 import com.firebase.ui.auth.AuthUI
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import org.koin.android.viewmodel.ext.android.viewModel
 
 
-class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
+class MainActivity : BaseActivity<List<Note>?>() {
 
     companion object {
         fun start(context: Context) = Intent(context, MainActivity::class.java).apply {
@@ -36,6 +39,7 @@ class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
     }
     override val layoutRes = R.layout.activity_main
     private lateinit var adapter: MainAdapter
+    private lateinit var onAddButtonJob: Job
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,15 +47,26 @@ class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
 
         rv_notes.layoutManager = GridLayoutManager(this, 2)
         adapter = MainAdapter() {
-            NoteActivity.startNoteActivity(this, it.id)
+            viewModel.startNoteActivity(it)
         }
         rv_notes.adapter = adapter
         button_add.setOnClickListener {
-            viewModel.setOnAddButtonClicker()
+            viewModel.startNoteActivity(null)
         }
-        viewModel.getLiveDataOnButtonAddPressed().observe(this, { NoteActivity.startNoteActivity(this) })
         viewModelForMainMenuItem.getStartLogoutDialogLiveData().observe(this, { showLogoutDialog() })
         viewModelForMainMenuItem.getLogoutOkLiveData().observe(this, { logout() })
+    }
+
+    override fun onStart() {
+        super.onStart()
+        onAddButtonJob = launch {
+            viewModel.getStartNoteActivityChannel().consumeEach {
+                it?.let{
+                    NoteActivity.startNoteActivity(this@MainActivity, it.id)
+                } ?: NoteActivity.startNoteActivity(this@MainActivity)
+            }
+        }
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean =

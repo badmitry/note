@@ -1,43 +1,62 @@
 package com.badmitry.kotlingeekbrains.vm
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.badmitry.kotlingeekbrains.data.Repository
 import com.badmitry.kotlingeekbrains.data.error.NotAuthentication
-import com.badmitry.kotlingeekbrains.ui.BaseViewState
-import kotlin.concurrent.thread
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlin.coroutines.CoroutineContext
 
-open class BaseViewModel<T, S : BaseViewState<T>>(private val repository: Repository) : ViewModel() {
-    open val viewStateLiveData = MutableLiveData<S>()
-    open fun getViewState(): LiveData<S> {
-        return viewStateLiveData
+open class BaseViewModel<S>(private val repository: Repository) : ViewModel(), CoroutineScope {
+    override val coroutineContext: CoroutineContext by lazy {
+        Dispatchers.Default + Job()
+    }
+    private val viewStateChannel = BroadcastChannel<S>(Channel.CONFLATED)
+    private val errorChannel = Channel<Throwable>()
+
+    fun getViewState(): ReceiveChannel<S> = viewStateChannel.openSubscription()
+    fun getErrorChannel(): ReceiveChannel<Throwable> = errorChannel
+
+    protected fun setError(e: Throwable) = launch {
+        errorChannel.send(e)
     }
 
-    open val notAuthenticationLiveData: MutableLiveData<Unit> = MutableLiveData()
-    open val showErrorLiveData: MutableLiveData<String> = MutableLiveData()
-    private val notInternetConnectionLiveData: MutableLiveData<Unit> = MutableLiveData()
-    private val isReconnectionLiveData: MutableLiveData<Boolean> = MutableLiveData()
-    fun getNotInternetConnectionLiveData(): LiveData<Unit> = notInternetConnectionLiveData
-    fun getNotAuthenticationLiveData(): LiveData<Unit> = notAuthenticationLiveData
-    fun getShowErrorLiveData(): LiveData<String> = showErrorLiveData
-    fun getIsReconnectionLiveData(): LiveData<Boolean> = isReconnectionLiveData
-    open fun renderError(error: Throwable) {
+    protected fun setData(data: S) = launch { viewStateChannel.send(data) }
+
+    private val notAuthenticationChannel = Channel<Unit>(Channel.CONFLATED)
+    private val showErrorChannel = Channel<String>(Channel.CONFLATED)
+    private val notInternetConnectionChannel = Channel<Unit>(Channel.CONFLATED)
+    fun getNotInternetConnectionChannel(): ReceiveChannel<Unit> = notInternetConnectionChannel
+    fun getNotAuthenticationChannel(): ReceiveChannel<Unit> = notAuthenticationChannel
+    fun getShowErrorChannel(): ReceiveChannel<String> = showErrorChannel
+    suspend fun renderError(error: Throwable) {
         when (error) {
             is NotAuthentication -> {
-                thread {
-                    if (!repository.checkInternetConnection()) {
-                        notInternetConnectionLiveData.postValue(Unit)
-                    } else {
-                        notAuthenticationLiveData.postValue(Unit)
-                    }
-                }
+                startAuthentication()
             }
-            else -> error.message?.let { showErrorLiveData.value = it }
+            else -> error.message?.let { showErrorChannel.send(it) }
         }
     }
 
-    fun reconnectionToInternet(boolean: Boolean) {
-            isReconnectionLiveData.value = boolean
+    suspend fun startAuthentication() {
+        coroutineScope {
+            launch (Dispatchers.IO){
+                if (!repository.checkInternetConnection()) {
+                    notInternetConnectionChannel.send(Unit)
+                } else {
+                    notAuthenticationChannel.send(Unit)
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    override fun onCleared() {
+        super.onCleared()
+        viewStateChannel.close()
+        errorChannel.close()
+        coroutineContext.cancel()
     }
 }

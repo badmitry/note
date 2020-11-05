@@ -5,10 +5,10 @@ import com.badmitry.kotlingeekbrains.data.entity.Note
 
 class Repository(private val dataProvider: DataProvider) {
 
-    fun getNotes() = dataProvider.getNotes()
-    fun saveNote(note: Note) = dataProvider.saveNote(note)
-    fun getNoteById(id: String) = dataProvider.getNoteById(id)
-    fun deleteNote(id: String) = dataProvider.deleteNote(id)
-    fun getCurrentUser() = dataProvider.getCurrentUser()
-    fun checkInternetConnection(): Boolean = dataProvider.checkInternetConnection()
+    suspend fun subscribeNotes() = dataProvider.subscribeNotes()
+    suspend fun saveNote(note: Note) = dataProvider.saveNote(note)
+    suspend fun getNoteById(id: String) = dataProvider.getNoteById(id)
+    suspend fun deleteNote(id: String) = dataProvider.deleteNote(id)
+    suspend fun getCurrentUser() = dataProvider.getCurrentUser()
+    suspend fun checkInternetConnection()= dataProvider.checkInternetConnection()
 }

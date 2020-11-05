@@ -2,19 +2,21 @@ package com.badmitry.kotlingeekbrains.ui.splash
 
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.ui.main.MainActivity
 import com.badmitry.kotlingeekbrains.vm.SplashViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import org.koin.android.viewmodel.ext.android.viewModel
 
-class SplashActivity : BaseActivity<Boolean?, SplashViewState>() {
+class SplashActivity : BaseActivity<Boolean?>() {
     companion object {
         fun start(context: Context) = Intent(context, SplashActivity::class.java).apply {
             context.startActivity(this)
         }
     }
-
+    private lateinit var startMainActivityJob: Job
     override val viewModel: SplashViewModel by viewModel()
     override val layoutRes: Int? = null
 
@@ -25,17 +27,28 @@ class SplashActivity : BaseActivity<Boolean?, SplashViewState>() {
 
     override fun renderData(data: Boolean?) {
         data?.takeIf { it }?.let {
-            viewModel.startMainActivity()
+            launch {
+                viewModel.startMainActivity()
+            }
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        viewModel.getStartMainActivityLiveData().observe(this, { startMainActivity() })
+    override fun onStart() {
+        super.onStart()
+        startMainActivityJob = launch {
+            viewModel.getStartMainActivityChannel().consumeEach {
+                startMainActivity()
+            }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        startMainActivityJob.cancel()
     }
 
     private fun startMainActivity() {
-        MainActivity.start(this)
         finish()
+        MainActivity.start(this)
     }
 }
