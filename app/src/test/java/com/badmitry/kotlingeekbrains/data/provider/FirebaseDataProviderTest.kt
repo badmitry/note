@@ -55,11 +55,9 @@ class FirebaseDataProviderTest {
     @Test
     fun `before throw NotAuthentication if no auth`() = runBlocking {
         coEvery { mockAuth.currentUser } returns null
-        var receiveChannel: ReceiveChannel<NoteResult>? = null
-        receiveChannel?.consumeEach {
-            assertTrue(it is Error)
-        }
-        receiveChannel = provider.subscribeNotes()
+        val result = provider.subscribeNotes().receive()
+        val error = (result as NoteResult.Error).error
+        assertTrue(error is NotAuthentication)
 //
 //        assertTrue(provider.saveNote(testNotes[0]) is Unit)
 //        assertTrue(provider.saveNote(testNotes[0]) is Unit)
