@@ -9,15 +9,12 @@ class SplashViewModel (private val repository: Repository) : BaseViewModel<Boole
     private val startMainActivityChannel = Channel<Unit>()
     fun getStartMainActivityChannel(): Channel<Unit> = startMainActivityChannel
 
-    suspend fun startMainActivity() {
-        startMainActivityChannel.send(Unit)
-    }
-
     fun requestUser() {
         launch {
             repository.getCurrentUser()?.let {
                 setData(true)
-                startMainActivity()
+                println("!!! request")
+                startMainActivityChannel.send(Unit)
             } ?: setError(NotAuthentication())
         }
     }
