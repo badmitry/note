@@ -116,7 +116,6 @@ class NoteActivity : BaseActivity<Note?>() {
                 changeBackgroundColor(it)
             }
         }
-        viewModel.getHideProgressBarLiveData().observe(this, {hideProgressBar()})
     }
 
     private fun startDelDialog() {
@@ -188,5 +187,15 @@ class NoteActivity : BaseActivity<Note?>() {
     override fun renderData(data: Note?) {
         note = data
         initView()
+    }
+
+    override fun onStop() {
+        hideProgressBarJob.cancel()
+        showPaletteJob.cancel()
+        onBackPressedJob.cancel()
+        isTitleLessThreeJob.cancel()
+        delDialogJob.cancel()
+        changeColorJob.cancel()
+        super.onStop()
     }
 }

@@ -5,6 +5,7 @@ import com.badmitry.kotlingeekbrains.data.Repository
 import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.model.Color
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -12,13 +13,12 @@ import java.util.*
 
 class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(repository) {
     private val DATE_TIME_FORMAT = "dd.MM.yy HH:mm"
-    private val onBackPressedChannel = Channel<Unit>()
-    private val isTitleLessThreeChannel = Channel<Unit>()
-    private val startDelDialogChannel = Channel<Unit>()
-    private val showPaletteChannel = Channel<Boolean>()
-    private val changeColorChannel = Channel<Color>()
-    private val hideProgressBarLiveData : MutableLiveData<Unit> = MutableLiveData()
-    private val hideProgressBarChannel = Channel<Boolean>()
+    private val onBackPressedChannel = BroadcastChannel<Unit>(Channel.CONFLATED)
+    private val isTitleLessThreeChannel = BroadcastChannel<Unit>(Channel.CONFLATED)
+    private val startDelDialogChannel = BroadcastChannel<Unit>(Channel.CONFLATED)
+    private val showPaletteChannel = BroadcastChannel<Boolean>(Channel.CONFLATED)
+    private val changeColorChannel = BroadcastChannel<Color>(Channel.CONFLATED)
+    private val hideProgressBarChannel = BroadcastChannel<Boolean>(Channel.CONFLATED)
     private var pendingNote: Note? = null
     private var showPalette = false
     fun getStartDelDialogChannel() = startDelDialogChannel
@@ -27,7 +27,6 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
     fun getShowPaletteChannel() = showPaletteChannel
     fun getChangeColorChannel() = changeColorChannel
     fun getHideProgressBarChannel() = hideProgressBarChannel
-    fun getHideProgressBarLiveData() = hideProgressBarLiveData
 
     suspend fun startDelDialog() {
         startDelDialogChannel.send(Unit)
@@ -65,10 +64,12 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
         }
     }
 
-    fun hideProgressBar() {
-        hideProgressBarLiveData.value = Unit
+    @ExperimentalCoroutinesApi
+    suspend fun hideProgressBar() {
+        hideProgressBarChannel.send(true)
     }
 
+    @ExperimentalCoroutinesApi
     suspend fun onBackPressed() {
         val newTitle: String = pendingNote?.title ?: ""
         if (newTitle.length < 3) {
@@ -76,7 +77,7 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
             pendingNote = null
             return
         }
-        onBackPressedChannel.send(Unit)
+        onBackPressedChannel.send(element = Unit)
     }
 
     fun saveNote(title: String, text: String) {
@@ -89,6 +90,7 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
         saveNoteToRepo()
     }
 
+    @ExperimentalCoroutinesApi
     suspend fun changeNoteColor(color: Color) {
         val date = SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date())
         pendingNote = pendingNote?.copy(
