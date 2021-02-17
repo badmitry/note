@@ -116,7 +116,7 @@ class NoteActivity : BaseActivity<Note?>() {
                 changeBackgroundColor(it)
             }
         }
-//        viewModel.getHideProgressBarLiveData().observe(this@NoteActivity, Observer<Unit> {hideProgressBar()})
+        viewModel.getHideProgressBarLiveData().observe(this, {hideProgressBar()})
     }
 
     private fun startDelDialog() {

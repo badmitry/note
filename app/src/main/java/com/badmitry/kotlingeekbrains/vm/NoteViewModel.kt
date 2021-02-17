@@ -57,15 +57,15 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
             repository.getNoteById(id).let {
                 pendingNote = it
                 setData(pendingNote)
+                hideProgressBar()
             }
         } catch (e: Throwable) {
             setError(e)
             hideProgressBar()
         }
-        hideProgressBar()
     }
 
-    suspend fun hideProgressBar() {
+    fun hideProgressBar() {
         hideProgressBarLiveData.value = Unit
     }
 
