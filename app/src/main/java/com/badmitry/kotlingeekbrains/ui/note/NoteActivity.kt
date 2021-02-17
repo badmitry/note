@@ -18,10 +18,12 @@ import com.badmitry.kotlingeekbrains.data.model.Color
 import com.badmitry.kotlingeekbrains.ui.BaseActivity
 import com.badmitry.kotlingeekbrains.vm.NoteViewModel
 import kotlinx.android.synthetic.main.activity_note.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import org.koin.android.viewmodel.ext.android.viewModel
+import java.util.Observer
 
 class NoteActivity : BaseActivity<Note?>() {
 
@@ -74,6 +76,7 @@ class NoteActivity : BaseActivity<Note?>() {
         initView()
     }
 
+    @ExperimentalCoroutinesApi
     override fun onStart() {
         super.onStart()
         showPaletteJob = launch {
@@ -87,7 +90,9 @@ class NoteActivity : BaseActivity<Note?>() {
         }
         hideProgressBarJob = launch {
             viewModel.getHideProgressBarChannel().consumeEach {
-                hideProgressBar()
+                if (it) {
+                    hideProgressBar()
+                }
             }
         }
         onBackPressedJob = launch {
@@ -111,6 +116,7 @@ class NoteActivity : BaseActivity<Note?>() {
                 changeBackgroundColor(it)
             }
         }
+//        viewModel.getHideProgressBarLiveData().observe(this@NoteActivity, Observer<Unit> {hideProgressBar()})
     }
 
     private fun startDelDialog() {
@@ -129,7 +135,7 @@ class NoteActivity : BaseActivity<Note?>() {
     private fun hideProgressBar() {
         appbar.visibility = View.VISIBLE
         list_item.visibility = View.VISIBLE
-        progress_bar.visibility = View.INVISIBLE
+        progress_bar.visibility = View.GONE
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean =
@@ -180,7 +186,7 @@ class NoteActivity : BaseActivity<Note?>() {
     }
 
     override fun renderData(data: Note?) {
-        this.note = data
+        note = data
         initView()
     }
 }

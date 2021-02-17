@@ -37,6 +37,7 @@ abstract class BaseActivity<S> : AppCompatActivity(), CoroutineScope {
         }
     }
 
+    @ExperimentalCoroutinesApi
     override fun onStart() {
         super.onStart()
         dataJob = launch {

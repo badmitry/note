@@ -1,8 +1,10 @@
 package com.badmitry.kotlingeekbrains.vm
 
+import androidx.lifecycle.MutableLiveData
 import com.badmitry.kotlingeekbrains.data.Repository
 import com.badmitry.kotlingeekbrains.data.entity.Note
 import com.badmitry.kotlingeekbrains.data.model.Color
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -15,6 +17,7 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
     private val startDelDialogChannel = Channel<Unit>()
     private val showPaletteChannel = Channel<Boolean>()
     private val changeColorChannel = Channel<Color>()
+    private val hideProgressBarLiveData : MutableLiveData<Unit> = MutableLiveData()
     private val hideProgressBarChannel = Channel<Boolean>()
     private var pendingNote: Note? = null
     private var showPalette = false
@@ -24,6 +27,7 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
     fun getShowPaletteChannel() = showPaletteChannel
     fun getChangeColorChannel() = changeColorChannel
     fun getHideProgressBarChannel() = hideProgressBarChannel
+    fun getHideProgressBarLiveData() = hideProgressBarLiveData
 
     suspend fun startDelDialog() {
         startDelDialogChannel.send(Unit)
@@ -52,16 +56,17 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
         try {
             repository.getNoteById(id).let {
                 pendingNote = it
-                setData(it)
-                hideProgressBar()
+                setData(pendingNote)
             }
         } catch (e: Throwable) {
             setError(e)
+            hideProgressBar()
         }
+        hideProgressBar()
     }
 
     suspend fun hideProgressBar() {
-            hideProgressBarChannel.send(true)
+        hideProgressBarLiveData.value = Unit
     }
 
     suspend fun onBackPressed() {
@@ -81,6 +86,7 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
                 notes = text,
                 lastChanged = date
         ) ?: Note(UUID.randomUUID().toString(), title, text, lastChanged = date)
+        saveNoteToRepo()
     }
 
     suspend fun changeNoteColor(color: Color) {
@@ -92,10 +98,17 @@ class NoteViewModel(private val repository: Repository) : BaseViewModel<Note?>(r
         changeColorChannel.send(color)
     }
 
+    @ExperimentalCoroutinesApi
     public override fun onCleared() {
+        saveNoteToRepo()
+    }
+
+    fun saveNoteToRepo() {
         pendingNote?.let {
-            launch {
-                repository.saveNote(it)
+            if (it.title.length >= 3) {
+                launch {
+                    repository.saveNote(it)
+                }
             }
         }
     }

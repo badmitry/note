@@ -13,7 +13,6 @@ class SplashViewModel (private val repository: Repository) : BaseViewModel<Boole
         launch {
             repository.getCurrentUser()?.let {
                 setData(true)
-                println("!!! request")
                 startMainActivityChannel.send(Unit)
             } ?: setError(NotAuthentication())
         }

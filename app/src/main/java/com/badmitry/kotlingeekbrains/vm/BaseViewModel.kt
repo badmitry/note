@@ -42,7 +42,7 @@ open class BaseViewModel<S>(private val repository: Repository) : ViewModel(), C
 
     suspend fun startAuthentication() {
         coroutineScope {
-            launch (Dispatchers.IO){
+            launch(Dispatchers.IO) {
                 if (!repository.checkInternetConnection()) {
                     notInternetConnectionChannel.send(Unit)
                 } else {
