@@ -11,7 +11,8 @@ import com.badmitry.kotlingeekbrains.ui.note.NoteViewState
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, NoteViewState>(repository) {
+class NoteViewModel(private val repository: Repository) :
+    BaseViewModel<Note?, NoteViewState>(repository) {
     private val DATE_TIME_FORMAT = "dd.MM.yy HH:mm"
     private val onBackPressedLiveData: MutableLiveData<Unit> = MutableLiveData()
     private val lengthTitleLessThreeLiveData: MutableLiveData<Unit> = MutableLiveData()
@@ -86,17 +87,17 @@ class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, 
     fun saveNote(title: String, text: String) {
         val date = SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date())
         pendingNote = pendingNote?.copy(
-                title = title,
-                notes = text,
-                lastChanged = date
+            title = title,
+            notes = text,
+            lastChanged = date
         ) ?: Note(UUID.randomUUID().toString(), title, text, lastChanged = date)
     }
 
     fun changeNoteColor(color: Color) {
         val date = SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date())
         pendingNote = pendingNote?.copy(
-                color = color,
-                lastChanged = date
+            color = color,
+            lastChanged = date
         ) ?: Note(UUID.randomUUID().toString(), "", "", lastChanged = date)
         changeColorLiveData.value = color
     }
@@ -105,6 +106,9 @@ class NoteViewModel (private val repository: Repository) : BaseViewModel<Note?, 
         result.let {
             it?.removeObserver(observer)
         }
+    }
+
+    fun saveNoteToRepo() {
         pendingNote?.let {
             repository.saveNote(it)
         }

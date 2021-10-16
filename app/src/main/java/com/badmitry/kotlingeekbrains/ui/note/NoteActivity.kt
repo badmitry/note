@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Menu
@@ -77,6 +78,11 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
         })
     }
 
+    override fun onPause() {
+        viewModel.saveNoteToRepo()
+        super.onPause()
+    }
+
     private fun startDelDialog() {
         AlertDialog.Builder(this)
                 .setTitle(R.string.delete_menu_title)
@@ -100,6 +106,7 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
             when (item.itemId) {
                 android.R.id.home -> {
+                    viewModel.onBackPressed()
                     viewModel.onBackPressed()
                     true
                 }
